@@ -5,6 +5,12 @@ validation <- read.csv('./pml-testing.csv', header=T)
 #training$classe <- as.factor(training$classe)
 #testing$classe <- as.factor(testing$classe)
 
+# find only nonzero columns in validation set
+test <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
+nznames <- names(test)[test==FALSE]
+nznames <- nznames[-(1:7)]
+nznames <- nznames[1:(length(nznames)-1)]
+
 set.seed(127)
 training_sample <- createDataPartition(y=train_in$classe, p=0.7, list=FALSE)
 training <- train_in[training_sample, ]
@@ -32,14 +38,19 @@ testing <- train_in[-training_sample, ]
 
 fitControl <- trainControl(method='cv', number = 3)
 model <- train(
-  classe ~ ., data=training,
+  classe ~ ., 
+  #data=training[, 8:ncol(training)],
+  data=training[, c('classe', nznames)],
   trControl=fitControl,
   #preProcess=c('center', 'scale'),
-  method='rf'
+  method='rf',
+  ntree=10
 )
-save(model, './ModelFitRandomForest.RData')
+save(model, file='./ModelFitRandomForest.RData')
 # plot(model$finalModel)
 # text(model$finalModel)
 
+#load('./ModelFitRandomForest.RData')
+
 pred <- predict(model, newdata=testing)
-confusionMatrix(pred, na.omit(testing)$classe)
+confusionMatrix(pred, testing$classe)
