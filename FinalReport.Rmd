@@ -1,16 +1,25 @@
 
-# Practical Machine Learning -- Final Report #
+---
+title: "Practical Machine Learning Final Report: Exercise Prediction "
+author: "Andrew J. Dyck"
+keep_md: yes
+output: html_document
+---
 
 ## Data ##
 The data for this project involves readings from wearable fitness trackers. The following is an excerpt from the Coursera project description:
 
-> Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+> "Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset)".
 
 ### Data Cleaning and Preparation ###
 The raw data comes in to files, training and testing. 
 
-```{r}
+```{r, results='hide', echo=FALSE, include=FALSE}
 library(caret)
+library(png)
+library(grid)
+```
+```{r}
 train_in <- read.csv('./pml-training.csv', header=T)
 validation <- read.csv('./pml-testing.csv', header=T)
 ```
@@ -30,9 +39,14 @@ In order to predict classes in the validation sample, I'll need to use features 
 
 ```{r}
 all_zero_colnames <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
-nznames <- names(test)[all_zero_colnames==FALSE]
+nznames <- names(all_zero_colnames)[all_zero_colnames==FALSE]
 nznames <- nznames[-(1:7)]
 nznames <- nznames[1:(length(nznames)-1)]
+```
+
+The models will be fit using the following data columns:
+```{r, echo=FALSE}
+print(sort(nznames))
 ```
 
 ## Model building ##
@@ -45,8 +59,11 @@ For this project I'll use 3 differnt model algorithms and then look to see whih 
 
 The code to run fit these models is:
 
-```{r, eval=FALSE}
+```{r, echo=FALSE}
 fitControl <- trainControl(method='cv', number = 3)
+```
+
+```{r, eval=FALSE}
 model_cart <- train(
   classe ~ ., 
   data=training[, c('classe', nznames)],
@@ -71,11 +88,22 @@ model_rf <- train(
 save(model_rf, file='./ModelFitRF.RData')
 ```
 
-## Cross validation ##
+### Cross validation ###
+Cross validation is done for each model with K = 3. This is set in the above code chunk using the fitControl object as defined below:
+
+```{r, eval=FALSE}
+fitControl <- trainControl(method='cv', number = 3)
+```
 
 ## Model Assessment (Out of sample error) ##
 
-```{r}
+```{r, echo=FALSE, results='hide'}
+load('./ModelFitCART.RData')
+load('./ModelFitGBM.RData')
+load('./ModelFitRF.RData')
+```
+
+```{r, message=FALSE}
 predCART <- predict(model_cart, newdata=testing)
 cmCART <- confusionMatrix(predCART, testing$classe)
 predGBM <- predict(model_gbm, newdata=testing)
@@ -91,12 +119,53 @@ print(AccuracyResults)
 
 Based on an assessment of these 3 model fits and out-of-sample results, it looks like both gradient boosting and random forests outperform the CART model, with random forests being slightly more accurate. The confusion matrix for the random forest model is below.
 
-```{r}
+```{r, echo=FALSE}
 print(cmRF$table)
 ```
 
 The next step in modeling could be to create an ensemble model of these three model results, however, given the high accuracy of the random forest model, I don't believe this process is necessary here. I'll accept the random forest model as the champion and move on to prediction in the validation sample.
 
+```{r, echo=FALSE}
+champion_model <- model_rf
+```
+
+```{r, echo=FALSE}
+imp <- varImp(champion_model)
+imp$importance$Overall <- sort(imp$importance$Overall, decreasing=TRUE)
+featureDF <- data.frame(
+  FeatureName=row.names(imp$importance),
+  Importance=imp$importance$Overall
+)
+```
+
+The champion model includes the following 5 features as the most important for predicting the exercise. A feature plot is included to show how these features are related to one another and how clusters of exercise class begin to appear using these 5 features.
+```{r, echo=FALSE}
+print(featureDF[1:5,])
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# this code is here to show how the figure was created. Not evaluated to save memory when building the html file.
+featurePlot(x=training[, featureDF$FeatureName[1:5]], y=training$classe, plot = 'pairs')
+```
+
+```{r fig.width=10, fig.height=10, echo=FALSE}
+img <- readPNG("./FeaturePlot.png")
+grid.raster(img)
+```
+
 ## Prediction ##
 
+As a last step in the project, I'll use the validation data sample ('pml-testing.csv') to predict a classe for each of the 20 observations based on the other information we know about these observations contained in the validation sample.
 
+```{r}
+predValidation <- predict(champion_model, newdata=validation)
+ValidationPredictionResults <- data.frame(
+  problem_id=validation$problem_id,
+  predicted=predValidation
+)
+print(ValidationPredictionResults)
+```
+
+## Conclusion ##
+
+Based on the data available, I am able to fit 
