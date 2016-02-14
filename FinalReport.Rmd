@@ -1,5 +1,39 @@
 
-# Report #
+# Practical Machine Learning -- Final Report #
+
+## Data ##
+The data for this project involves readings from wearable fitness trackers. The following is an excerpt from the Coursera project description:
+
+> Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+### Data Cleaning and Preparation ###
+The raw data comes in to files, training and testing. 
+
+```{r}
+library(caret)
+train_in <- read.csv('./pml-training.csv', header=T)
+validation <- read.csv('./pml-testing.csv', header=T)
+```
+
+#### Data Partitioning ####
+Since I'll be predicting classes in the testing dataset, I'll split the training data into training and testing partitions and use the pml-testing.csv as a validation sample. I'll use cross validation within the training partition to improve the model fit and then do an out-of-sample test with the testing partition.
+
+```{r}
+set.seed(127)
+training_sample <- createDataPartition(y=train_in$classe, p=0.7, list=FALSE)
+training <- train_in[training_sample, ]
+testing <- train_in[-training_sample, ]
+```
+
+#### Identification on Non-Zero Data ####
+In order to predict classes in the validation sample, I'll need to use features that are non-zero in the validation data set. Typically, I'd stay away from the even looking at the validation data set so I'm not influenced by the contents in model fitting. However, since this is not a time series analysis, I feel that looking at the validation sample for non-zero data columns is not of major concern for finding a predictive model that fits well out of sample.
+
+```{r}
+all_zero_colnames <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
+nznames <- names(test)[all_zero_colnames==FALSE]
+nznames <- nznames[-(1:7)]
+nznames <- nznames[1:(length(nznames)-1)]
+```
 
 ## Model building ##
 

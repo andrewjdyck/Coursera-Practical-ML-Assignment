@@ -6,8 +6,8 @@ validation <- read.csv('./pml-testing.csv', header=T)
 #testing$classe <- as.factor(testing$classe)
 
 # find only nonzero columns in validation set
-test <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
-nznames <- names(test)[test==FALSE]
+all_zero_colnames <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
+nznames <- names(test)[all_zero_colnames==FALSE]
 nznames <- nznames[-(1:7)]
 nznames <- nznames[1:(length(nznames)-1)]
 
