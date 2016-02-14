@@ -7,7 +7,7 @@ validation <- read.csv('./pml-testing.csv', header=T)
 
 # find only nonzero columns in validation set
 all_zero_colnames <- sapply(names(validation), function(x) all(is.na(validation[,x])==TRUE))
-nznames <- names(test)[all_zero_colnames==FALSE]
+nznames <- names(all_zero_colnames)[all_zero_colnames==FALSE]
 nznames <- nznames[-(1:7)]
 nznames <- nznames[1:(length(nznames)-1)]
 
@@ -37,7 +37,25 @@ testing <- train_in[-training_sample, ]
 # lmProfile
 
 fitControl <- trainControl(method='cv', number = 3)
-model <- train(
+model_cart <- train(
+  classe ~ ., 
+  #data=training[, 8:ncol(training)],
+  data=training[, c('classe', nznames)],
+  trControl=fitControl,
+  #preProcess=c('center', 'scale'),
+  method='rpart'
+)
+save(model_cart, file='./ModelFitCART.RData')
+model_gbm <- train(
+  classe ~ ., 
+  #data=training[, 8:ncol(training)],
+  data=training[, c('classe', nznames)],
+  trControl=fitControl,
+  #preProcess=c('center', 'scale'),
+  method='gbm'
+)
+save(model_gbm, file='./ModelFitGBM.RData')
+model_rf <- train(
   classe ~ ., 
   #data=training[, 8:ncol(training)],
   data=training[, c('classe', nznames)],
@@ -46,7 +64,7 @@ model <- train(
   method='rf',
   ntree=100
 )
-save(model, file='./ModelFitRandomForest.RData')
+save(model_rf, file='./ModelFitRF.RData')
 # plot(model$finalModel)
 # text(model$finalModel)
 
