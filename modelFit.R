@@ -68,7 +68,20 @@ save(model_rf, file='./ModelFitRF.RData')
 # plot(model$finalModel)
 # text(model$finalModel)
 
-#load('./ModelFitRandomForest.RData')
+#load('./ModelFitRF.RData')
 
-pred <- predict(model, newdata=testing)
-confusionMatrix(pred, testing$classe)
+predCART <- predict(model_cart, newdata=testing)
+cmCART <- confusionMatrix(predCART, testing$classe)
+
+predGBM <- predict(model_gbm, newdata=testing)
+cmGBM <- confusionMatrix(predGBM, testing$classe)
+
+predRF <- predict(model_rf, newdata=testing)
+cmRF <- confusionMatrix(predRF, testing$classe)
+
+AccuracyResults <- data.frame(
+  Model = c('CART', 'GBM', 'RF'),
+  Accuracy = rbind(cmCART$overall[1], cmGBM$overall[1], cmRF$overall[1])
+)
+
+

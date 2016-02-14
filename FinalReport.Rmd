@@ -37,17 +37,38 @@ nznames <- nznames[1:(length(nznames)-1)]
 
 ## Model building ##
 
-```{r}
+For this project I'll use 3 differnt model algorithms and then look to see whih provides the best out-of-sample accuracty. The three model types I'm going to test are:
+
+1. Decision trees with CART (rpart)
+2. Stochastic gradient boosting trees (gbm)
+3. Random forest decision trees (rf)
+
+The code to run fit these models is:
+
+```{r, eval=FALSE}
 fitControl <- trainControl(method='cv', number = 3)
-model <- train(
+model_cart <- train(
   classe ~ ., 
   data=training[, c('classe', nznames)],
   trControl=fitControl,
-  #preProcess=c('center', 'scale'),
+  method='rpart'
+)
+save(model_cart, file='./ModelFitCART.RData')
+model_gbm <- train(
+  classe ~ ., 
+  data=training[, c('classe', nznames)],
+  trControl=fitControl,
+  method='gbm'
+)
+save(model_gbm, file='./ModelFitGBM.RData')
+model_rf <- train(
+  classe ~ ., 
+  data=training[, c('classe', nznames)],
+  trControl=fitControl,
   method='rf',
   ntree=100
 )
-save(model, file='./ModelFitRandomForest.RData')
+save(model_rf, file='./ModelFitRF.RData')
 ```
 
 ## Cross validation ##
@@ -55,9 +76,26 @@ save(model, file='./ModelFitRandomForest.RData')
 ## Model Assessment (Out of sample error) ##
 
 ```{r}
-pred <- predict(model, newdata=testing)
-confusionMatrix(pred, testing$classe)
+predCART <- predict(model_cart, newdata=testing)
+cmCART <- confusionMatrix(predCART, testing$classe)
+predGBM <- predict(model_gbm, newdata=testing)
+cmGBM <- confusionMatrix(predGBM, testing$classe)
+predRF <- predict(model_rf, newdata=testing)
+cmRF <- confusionMatrix(predRF, testing$classe)
+AccuracyResults <- data.frame(
+  Model = c('CART', 'GBM', 'RF'),
+  Accuracy = rbind(cmCART$overall[1], cmGBM$overall[1], cmRF$overall[1])
+)
+print(AccuracyResults)
 ```
+
+Based on an assessment of these 3 model fits and out-of-sample results, it looks like both gradient boosting and random forests outperform the CART model, with random forests being slightly more accurate. The confusion matrix for the random forest model is below.
+
+```{r}
+print(cmRF$table)
+```
+
+The next step in modeling could be to create an ensemble model of these three model results, however, given the high accuracy of the random forest model, I don't believe this process is necessary here. I'll accept the random forest model as the champion and move on to prediction in the validation sample.
 
 ## Prediction ##
 
