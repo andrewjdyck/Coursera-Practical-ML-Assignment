@@ -37,9 +37,28 @@ nznames <- nznames[1:(length(nznames)-1)]
 
 ## Model building ##
 
+```{r}
+fitControl <- trainControl(method='cv', number = 3)
+model <- train(
+  classe ~ ., 
+  data=training[, c('classe', nznames)],
+  trControl=fitControl,
+  #preProcess=c('center', 'scale'),
+  method='rf',
+  ntree=100
+)
+save(model, file='./ModelFitRandomForest.RData')
+```
+
 ## Cross validation ##
 
 ## Model Assessment (Out of sample error) ##
 
+```{r}
+pred <- predict(model, newdata=testing)
+confusionMatrix(pred, testing$classe)
+```
+
+## Prediction ##
 
 

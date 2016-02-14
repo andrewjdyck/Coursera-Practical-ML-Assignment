@@ -44,7 +44,7 @@ model <- train(
   trControl=fitControl,
   #preProcess=c('center', 'scale'),
   method='rf',
-  ntree=10
+  ntree=100
 )
 save(model, file='./ModelFitRandomForest.RData')
 # plot(model$finalModel)
