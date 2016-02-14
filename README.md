@@ -11,3 +11,4 @@ FinalReport.Rmd | The R Markdown report file.
 
 After the FinalReport.Rmd file is complete and converted to html, I pushed a copy of FinalReport.html to the gh-pages branch as index.html so that this can be viewed via github.
 
+[Final Report for Practical Machine Learning Course Project](https://andrewjdyck.github.io/Coursera-Practical-ML-Assignment/)
